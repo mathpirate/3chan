@@ -1,4 +1,4 @@
-from threechan import app 
+from threechan.heroku_app import app 
 
 if __name__ == '__main__':
     app.run()

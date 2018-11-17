@@ -1,6 +1,3 @@
-# Fun ideas
-## Record what people say in the nice times and then play it back to other people in the bad times...? Probably too risky.
-
 ### SETUP
 
 # Imports
@@ -16,8 +13,8 @@ account_sid = 'ACf507d665804b1ccb4962e2bdc0390c48'
 auth_token = os.environ['TWILIO_AUTH_TOKEN']
 
 # Phone numbers
-admin_number = '+17754203843'
-front_numbers = ['+17755713503', '+17755716730', '+17755715833', '+17755718918', '+17755715738',
+admin_number = '17755713503'
+front_numbers = ['+17755716730', '+17755715833', '+17755718918', '+17755715738',
                  '+17755713457', '+17755718401', '+17755714365', '+17755716227', '+17755718057',
                  '+17755717604', '+17755717317']
 # Us!
@@ -28,15 +25,66 @@ miju_cell = '+14152655604'
 peter_cell = '+14155099881'
 app_admins = [gideon_cell, andrea_cell, lexi_cell, miju_cell, peter_cell]
 
-# Allocations - perhaps pre-loaded, perhaps not
-participant_number_allocations = {}
-
 # Other global constants
 twilio_client = Client(account_sid, auth_token)
 flask_blueprint = Blueprint('flask_blueprint', __name__)
 test_message_body = "Hello from Tupperware 2018! The time is %s" % str(datetime.datetime.now())
 
 ### END SETUP
+
+### DB
+
+# Update
+def update_participant_number_allocations(participant, front, admin):
+    from threechan.models import Allocation, db
+    new_alloc = Allocation(participant, front, admin)
+    db.session.add(new_alloc)
+    db.session.commit()
+    return new_alloc
+def clear_participant_number_allocations():
+    from threechan.models import Allocation, db
+    db.session.query(Allocation).delete()
+    db.session.commit()
+
+# Access
+def front_num_for_participant(participant_number):
+    from threechan.models import Allocation, db
+    try:
+        alloc = db.session.query(Allocation).filter(Allocation.participant_number==participant_number).one()
+        return alloc.front_number
+    except:
+        return None
+def admin_for_participant(participant_number):
+    from threechan.models import Allocation, db
+    try:
+        alloc = db.session.query(Allocation).filter(Allocation.participant_number==participant_number).one()
+        return alloc.participant_number
+    except:
+        return None
+def allocation_for_participant(participant_number):
+    from threechan.models import Allocation, db
+    alloc = None
+    try:
+        alloc = db.session.query(Allocation).filter(Allocation.participant_number==participant_number).one()
+    except:
+        pass
+    return None
+def allocation_for_front_number(front_number):
+    from threechan.models import Allocation, db
+    try:
+        alloc = db.session.query(Allocation).filter(Allocation.front_number==front_number).one()
+        return alloc
+    except:
+        return None
+def all_tuples():
+    from threechan.models import Allocation, db
+    tuples = []
+    for alloc in db.session.query(Allocation).all():
+        tuples.append((alloc.participant_number, alloc.front_number, alloc.admin_number))
+    return tuples
+
+### END DB
+
 ### APP ROUTES
 
 # Admin - insert number
@@ -53,20 +101,22 @@ def admin_insert_number():
         return str(non_admin_response)
     body = message_data['Body']
     admin_insert_response = MessagingResponse()
-    global participant_number_allocations
 
     ### INPUT TYPES
 
     # Is it a request to view the list of allocations?
     if body == "Allocations":
-        admin_insert_response.message("""The current list of allocations from participant phone numbers to\
-        front number/admin number pairs is: %s""" % str(participant_number_allocations))
+        tuples = all_tuples()
+        allocations_str = ""
+        for tuple in tuples:
+            allocations_str += "P: %s, F: %s, A: %s\n" % (tuple[0], tuple[1], tuple[2])
+        admin_insert_response.message("""The current list of allocations is:\n\n%s""" % str(all_tuples()))
         return str(admin_insert_response)
 
     # Is it a request to wipe all allocations?
     if body == "WIPE ALLOCATIONS FOR REAL":
         admin_insert_response.message("Ok, WIPING ALL ALLOCATIONS! Hope you meant it ;)")
-        participant_number_allocations = {}
+        clear_participant_number_allocations()
         return
 
     # Finally, assume it's intended to be a participant number.
@@ -80,27 +130,32 @@ def admin_insert_number():
     participant_number = '+1%s' % body
 
     # New participant? Handle if possible
-    if participant_number not in participant_number_allocations:
-        
+    from threechan.models import Allocation, db
+    existing_alloc = allocation_for_participant(participant_number)
+    print("Existing alloc %s for participant number %s" % (existing_alloc, participant_number))
+    if not existing_alloc:
         # Any numbers left?
         for possible_front_num in front_numbers:
-            if not possible_front_num in [value[0] for value in participant_number_allocations.values()]:
+            existing_front_alloc = allocation_for_front_number(possible_front_num)
+            if not existing_front_alloc:
                 # Found one!
-                participant_number_allocations[participant_number] = (possible_front_num, from_number)
+                print("Found %s front num to allocate!" % possible_front_num)
+                existing_alloc = update_participant_number_allocations(participant_number,
+                                                                           possible_front_num,
+                                                                           from_number)
                 break
             
     # No front numbers left? :(
-    if participant_number not in participant_number_allocations:
+    print("Existing alloc %s for participant number %s" % (existing_alloc, participant_number))    
+    if not existing_alloc:
         admin_insert_response.message("""No front numbers left to allocate for participant number %s :(.\
         Please ask Gideon to add functionality to the app.""" % participant_number)
     # We made an allocation - inform the admin who messaged in
     else:
-        allocated_front_num = participant_number_allocations[participant_number][0]
+        allocated_front_num = front_num_for_participant(participant_number)
         admin_insert_response.message("""New allocation made! You (admin %s) are now able to message participant %s\
         via front number %s. Go forth and make art.""" % (from_number, participant_number, allocated_front_num))
         admin_insert_response.message(allocated_front_num)
-        # PRINT THE WHOLE THING FOR HACKY RECORDS
-        print(participant_number_allocations)
 
     return str(admin_insert_response)
 
@@ -127,13 +182,11 @@ def front_incoming_sms():
     body = message_data['Body']
 
     # Find the allocated admin and participant for this front number
-    allocated_admin = None
-    participant = None
-    for participant_number in participant_number_allocations:
-        front, admin = participant_number_allocations[participant_number]
-        if front == to_number:
-            allocated_admin = admin
-            participant = participant_number
+    allocated_admin, participant = None, None
+    front_alloc = allocation_for_front_number(to_number)
+    if front_alloc:
+        allocated_admin = front_alloc.admin_number
+        participant = front_alloc.participant_number
 
     # Was this from an admin?
     if from_number in app_admins:
@@ -187,13 +240,11 @@ def front_incoming_call():
     to_number = message_data['To']
 
     # Find the allocated admin and participant for this front number
-    allocated_admin = None
-    participant = None
-    for participant_number in participant_number_allocations:
-        front, admin = participant_number_allocations[participant_number]
-        if front == to_number:
-            allocated_admin = admin
-            participant = participant_number
+    allocated_admin, participant = None, None
+    front_alloc = allocation_for_front_number(to_number)
+    if front_alloc:
+        allocated_admin = front_alloc.admin_number
+        participant = front_alloc.participant_number
 
     # Start our voice response
     resp = VoiceResponse()
