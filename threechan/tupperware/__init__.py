@@ -6,8 +6,6 @@
 # Imports
 import datetime
 from flask import Blueprint, request
-import os.path
-import pickle
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
@@ -31,20 +29,6 @@ app_admins = [gideon_cell, andrea_cell, lexi_cell, miju_cell, peter_cell]
 
 # Allocations - perhaps pre-loaded, perhaps not
 participant_number_allocations = {}
-allocations_filename = "./participant_allocations.pickle"
-def preload_participant_allocations():
-    global participant_number_allocations
-    if os.path.isfile(allocations_filename):
-        with open(allocations_filename, 'rb') as handle:
-            participant_number_allocations = pickle.load(handle)
-            handle.close()
-def store_participant_allocations(new_allocations):
-    global participant_number_allocations
-    participant_number_allocations = new_allocations
-    with open(allocations_filename, 'wb') as handle:
-        pickle.dump(participant_number_allocations, handle)
-        handle.close()
-preload_participant_allocations()
 
 # Other global constants
 twilio_client = Client(account_sid, auth_token)
@@ -81,8 +65,8 @@ def admin_insert_number():
     # Is it a request to wipe all allocations?
     if body == "WIPE ALLOCATIONS FOR REAL":
         admin_insert_response.message("Ok, WIPING ALL ALLOCATIONS! Hope you meant it ;)")
-        store_participant_allocations({})
-        return str(admin_insert_response)
+        participant_number_allocations = {}
+        return
 
     # Finally, assume it's intended to be a participant number.
     
@@ -102,8 +86,6 @@ def admin_insert_number():
             if not possible_front_num in [value[0] for value in participant_number_allocations.values()]:
                 # Found one!
                 participant_number_allocations[participant_number] = (possible_front_num, from_number)
-                # Store it via pickle
-                store_participant_allocations(participant_number_allocations)
                 break
             
     # No front numbers left? :(
