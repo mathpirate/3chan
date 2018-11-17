@@ -5,7 +5,7 @@
 
 # Imports
 import datetime
-from flask import Flask, request
+from flask import Blueprint, request
 import os.path
 import pickle
 from twilio.rest import Client
@@ -45,15 +45,15 @@ def store_participant_allocations(new_allocations):
 preload_participant_allocations()
 
 # Other global constants
-app = Flask(__name__)
 twilio_client = Client(account_sid, auth_token)
+flask_blueprint = Blueprint('flask_blueprint', __name__)
 test_message_body = "Hello from Tupperware 2018! The time is %s" % str(datetime.datetime.now())
 
 ### END SETUP
 ### APP ROUTES
 
 # Admin - insert number
-@app.route('/admin_insert_number', methods=['GET', 'POST'])
+@flask_blueprint.route('/admin_insert_number', methods=['GET', 'POST'])
 def admin_insert_number():
     # Get info from incoming request, prepare response object
     message_data = request.form
@@ -118,7 +118,7 @@ def admin_insert_number():
     return str(admin_insert_response)
 
 # Admin - incoming call
-@app.route('/admin_incoming_call', methods=['GET', 'POST'])
+@flask_blueprint.route('/admin_incoming_call', methods=['GET', 'POST'])
 def admin_incoming_call():
     # Start our voice response
     resp = VoiceResponse()
@@ -129,7 +129,7 @@ def admin_incoming_call():
     return str(resp)
 
 # Incoming SMS - to front number
-@app.route('/front_incoming_sms', methods=['GET', 'POST'])
+@flask_blueprint.route('/front_incoming_sms', methods=['GET', 'POST'])
 def front_incoming_sms():
     # Get info from incoming request, prepare response object
     message_data = request.form
@@ -190,7 +190,7 @@ def front_incoming_sms():
         return str(anon_response_message)
 
 # Incoming call - to front number
-@app.route('/front_incoming_call', methods=['GET', 'POST'])
+@flask_blueprint.route('/front_incoming_call', methods=['GET', 'POST'])
 def front_incoming_call():
     # Get info from incoming request, prepare response object
     message_data = request.form
@@ -228,7 +228,7 @@ def front_incoming_call():
     return str(resp)
 
 # Test message for Gideon
-@app.route('/test_message_gid')
+@flask_blueprint.route('/test_message_gid')
 def test_message_gid():
     message = twilio_client.messages.create(
         to=gideon_cell,
@@ -237,8 +237,5 @@ def test_message_gid():
     return "Message SID: %s" % message.sid
 
 ### END APP ROUTES
-### LOCAL DEV
 
-if __name__ == '__main__':
-    app.run(debug=True)
 
