@@ -98,6 +98,8 @@ def admin_insert_number():
         admin_insert_response.message("""New allocation made! You (admin %s) are now able to message participant %s\
         via front number %s. Go forth and make art.""" % (from_number, participant_number, allocated_front_num))
         admin_insert_response.message(allocated_front_num)
+        # PRINT THE WHOLE THING FOR HACKY RECORDS
+        print(participant_number_allocations)
 
     return str(admin_insert_response)
 
