@@ -1,1 +1,1 @@
-web: gunicorn -w 1 threechan:app --log-file -
+web: gunicorn -w 1 threechan.heroku_app:app --log-file -
