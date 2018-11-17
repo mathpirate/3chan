@@ -1,1 +1,1 @@
-web: gunicorn -w 4 threechan:app --log-file -
+web: gunicorn -w 1 threechan:app --log-file -
