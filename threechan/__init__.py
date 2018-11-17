@@ -1,5 +1,5 @@
 from flask import Flask
-from tupperware import flask_blueprint
+from threechan.tupperware import flask_blueprint
 
 app = Flask(__name__)
 
