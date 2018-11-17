@@ -117,7 +117,7 @@ def admin_insert_number():
     if body == "WIPE ALLOCATIONS FOR REAL":
         admin_insert_response.message("Ok, WIPING ALL ALLOCATIONS! Hope you meant it ;)")
         clear_participant_number_allocations()
-        return
+        return str(admin_insert_response)
 
     # Finally, assume it's intended to be a participant number.
     
