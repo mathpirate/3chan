@@ -23,7 +23,7 @@ front_numbers = ['+17755718883', '+17755716730', '+17755715833', '+17755718918',
 gideon_cell = '+14159393751'
 andrea_cell = '+14155496087'
 lexi_cell = '+14088887272'
-miju_cell = '+14152655604'
+#miju_cell = '+14152655604'
 peter_cell = '+14155099881'
 app_admins = [gideon_cell, andrea_cell, lexi_cell, miju_cell, peter_cell]
 
