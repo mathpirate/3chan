@@ -9,10 +9,11 @@ from flask import Blueprint, request
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
+import os
 
 # Twilio account info
 account_sid = 'ACf507d665804b1ccb4962e2bdc0390c48'
-auth_token = 'd636d0fc5a28e00000040cb35d397560'
+auth_token = os.environ['TWILIO_AUTH_TOKEN']
 
 # Phone numbers
 admin_number = '+17754203843'
