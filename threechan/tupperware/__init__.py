@@ -17,7 +17,8 @@ admin_number = '17755713503'
 front_numbers = ['+17755716730', '+17755715833', '+17755718918', '+17755715738',
                      '+17755713457', '+17755718401', '+17755714365', '+17755716227', '+17755718057',
                      '+17755717604', '+17755717317', '+17755713586', '+17755718734', '+17755716175',
-                     '+17755719751', '+17755718902']
+                     '+17755719751', '+17755718902', '+17755718902', '+17755718070', '+17755714535',
+                     '+17755714535', '+17755719714']
 # Us!
 gideon_cell = '+14159393751'
 andrea_cell = '+14155496087'
@@ -69,7 +70,7 @@ def allocation_for_participant(participant_number):
         alloc = db.session.query(Allocation).filter(Allocation.participant_number==participant_number).one()
     except:
         pass
-    return None
+    return alloc
 def allocation_for_front_number(front_number):
     from threechan.models import Allocation, db
     try:
