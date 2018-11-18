@@ -15,8 +15,9 @@ auth_token = os.environ['TWILIO_AUTH_TOKEN']
 # Phone numbers
 admin_number = '17755713503'
 front_numbers = ['+17755716730', '+17755715833', '+17755718918', '+17755715738',
-                 '+17755713457', '+17755718401', '+17755714365', '+17755716227', '+17755718057',
-                 '+17755717604', '+17755717317']
+                     '+17755713457', '+17755718401', '+17755714365', '+17755716227', '+17755718057',
+                     '+17755717604', '+17755717317', '+17755713586', '+17755718734', '+17755716175',
+                     '+17755719751', '+17755718902']
 # Us!
 gideon_cell = '+14159393751'
 andrea_cell = '+14155496087'
@@ -132,14 +133,12 @@ def admin_insert_number():
     # New participant? Handle if possible
     from threechan.models import Allocation, db
     existing_alloc = allocation_for_participant(participant_number)
-    print("Existing alloc %s for participant number %s" % (existing_alloc, participant_number))
     if not existing_alloc:
         # Any numbers left?
         for possible_front_num in front_numbers:
             existing_front_alloc = allocation_for_front_number(possible_front_num)
             if not existing_front_alloc:
                 # Found one!
-                print("Found %s front num to allocate!" % possible_front_num)
                 existing_alloc = update_participant_number_allocations(participant_number,
                                                                            possible_front_num,
                                                                            from_number)
